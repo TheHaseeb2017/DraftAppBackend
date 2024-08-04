@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "build": "babel src -d dist"
   },
   "keywords": [],
   "author": "",
@@ -20,5 +21,10 @@
     "sequelize": "^6.36.0",
     "socket.io": "^4.7.4",
     "socket.io-client": "^4.7.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.21.0",
+    "@babel/cli": "^7.21.0",
+    "@babel/preset-env": "^7.21.0"
   }
 }

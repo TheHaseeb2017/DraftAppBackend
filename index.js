@@ -19,7 +19,7 @@ const io = new Server(server, {
   cors: {
     origin:
       "http://localhost:3001" ||
-      "DraftAppFrontEnd2-env.eba-vfbmg6sv.us-east-1.elasticbeanstalk.com ",
+      "https://main.daw28hi2j0ubv.amplifyapp.com/",
     methods: ["GET", "POST", "PUT"],
   },
 });
@@ -85,7 +85,7 @@ app.use(bodyParser.json());
 const password = process.env.DB_PASSWORD || "Eagles17"; // Use the environment variable if set, fallback to a default value
 
 const sequelize = new Sequelize("draft_app_db", "postgres", password, {
-  host: "database-1.clui4sqc8c4e.us-east-1.rds.amazonaws.com",
+  host: "database-1.cv6iagsggit1.us-east-1.rds.amazonaws.com",
   dialect: "postgres",
 });
 
