@@ -19,7 +19,7 @@ const io = new Server(server, {
   cors: {
     origin:
       "http://localhost:3001" ||
-      "https://main.d3jowo4k8l40c2.amplifyapp.com/",
+      "https://main.d3gqk12ohzb6gi.amplifyapp.com/",
     methods: ["GET", "POST", "PUT"],
   },
 });
@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
       console.log("Invalid draft code");
     }
 
-    socket.on("disconnect", () => {
+      socket.on("disconnect", () => {
       console.log(`User ${socket.id} disconnected`);
     });
     socket.on("updatePlayers", () => {
