@@ -1,5 +1,5 @@
 const bodyParser = require("body-parser");
-const { Sequelize, DataTypes } = require("sequelize");
+const { Sequelize, DataTypes} = require("sequelize");
 const express = require("express");
 const app = express();
 const http = require("http");
@@ -18,8 +18,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin:
-      "http://localhost:3001" ||
-      "https://main.d3jowo4k8l40c2.amplifyapp.com/",
+      "http://localhost:3000" ||
+      "http://draftapp-ui-env.eba-xkf2drch.us-east-1.elasticbeanstalk.com/",
     methods: ["GET", "POST", "PUT"],
   },
 });
@@ -76,16 +76,16 @@ const isValidDraftCode = (draftCode) => {
 
 app.use(cors());
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log("Server is running on port 3000");
+server.listen(process.env.PORT || 8080, () => {
+  console.log("Server is running on port 8080");
 });
 
 app.use(bodyParser.json());
 
-const password = process.env.DB_PASSWORD || "Eagles17"; // Use the environment variable if set, fallback to a default value
+const password = process.env.DB_PASSWORD || "postgres"; // Use the environment variable if set, fallback to a default value
 
 const sequelize = new Sequelize("draft_app_db", "postgres", password, {
-  host: "database-1.cv6iagsggit1.us-east-1.rds.amazonaws.com",
+  host: "localhost",
   dialect: "postgres",
 });
 
@@ -153,6 +153,16 @@ const Team = sequelize.define(
         model: Draft,
         key: "draftcode",
       },
+    },
+    
+    teamcode: {
+      type: DataTypes.STRING(6),
+      unique: true,
+    },
+    
+    candraft: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: "true ",
     },
   },
   {
@@ -360,6 +370,32 @@ app.put("/draftsetting/update/:draftcode", async (req, res) => {
   }
 });
 
+app.put("/candraft/update/:teamcode", async (req, res) => {
+  const { teamcode } = req.params;
+
+  try {
+    // Find the team that matches the provided teamcode
+    const team = await Team.findOne({ where: { teamcode } });
+
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    // Update all teams with the same draftcode, setting candraft to false
+    await Team.update({ candraft: false }, { where: { draftcode: team.draftcode } });
+
+    // Set candraft to true for the team with the matching teamcode
+    team.candraft = true;
+    await team.save();
+
+    res.json({ message: "Draft status updated successfully" });
+  } catch (error) {
+    console.error("Error updating can draft", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 app.get("/player/notdrafted/:draftcode", async (req, res) => {
   const { draftcode } = req.params;
 
@@ -386,6 +422,7 @@ app.get("/teams/indraft/:draftcode", async (req, res) => {
       where: {
         draftcode: draftcode,
       },
+      order: [["draftorder", "ASC"]], 
     });
 
     res.json(team);
@@ -446,6 +483,23 @@ app.get("/player/indraft/:draftcode", async (req, res) => {
     res.json(player);
   } catch (error) {
     console.error("Error fetching players by draft code: ", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/teams/validate/:teamcode", async (req, res) => {
+  const { teamcode } = req.params;
+
+  try {
+    const draft = await Team.findAll({
+      where: {
+        teamcode: teamcode,
+      },
+    });
+
+    res.json(draft);
+  } catch (error) {
+    console.error("Error fetching by team code: ", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

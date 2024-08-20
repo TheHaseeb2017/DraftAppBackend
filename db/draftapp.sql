@@ -13,6 +13,9 @@ CREATE TABLE
         TeamID SERIAL PRIMARY KEY,
         TeamName VARCHAR(50) NOT NULL,
         DraftCode VARCHAR(6)  NOT NULL,
+        TeamCode VARCHAR(6) UNIQUE NOT NULL DEFAULT substr(md5(random()::text), 1, 6), 
+        CanDraft BOOLEAN DEFAULT false,
+        DraftOrder INT NOT NULL, 
         FOREIGN KEY (DraftCode) REFERENCES Drafts (DraftCode) ON DELETE CASCADE ON UPDATE CASCADE
     );
 
