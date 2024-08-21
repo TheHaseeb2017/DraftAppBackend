@@ -267,6 +267,30 @@ DraftPick.belongsTo(Player, { foreignKey: "playerid" });
 
 Team.hasMany(Player, { constraints: false, foreignKey: "teamid" });
 
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+app.post('/send-draft-code', async (req, res) => {
+  const { userEmail, draftCode } = req.body;
+
+  const msg = {
+    to: userEmail,
+    from: 'your-email@example.com',
+    subject: 'Your Draft Code',
+    text: `Thank you for creating a draft! Your draft code is: ${draftCode}`,
+    html: `<p>Your draft code is: <strong>${draftCode}</strong></p>`,
+  };
+
+  try {
+    await sgMail.send(msg);
+    res.status(200).send('Email sent successfully');
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).send('Failed to send email');
+  }
+});
+
+
 app.post("/drafts", async (req, res) => {
   try {
     const { draftname, draftdate, isactive, duration } = req.body;
