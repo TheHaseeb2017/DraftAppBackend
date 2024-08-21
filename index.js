@@ -27,10 +27,10 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
-  socket.on("connectToDraft", (draftCode) => {
-    if (isValidDraftCode(draftCode)) {
-      socket.join(draftCode);
-      console.log(`User ${socket.id} joined the draft: ${draftCode}`);
+  socket.on("connectToDraft", (localDraftCode) => {
+    if (isValidDraftCode(localDraftCode)) {
+      socket.join(localDraftCode);
+      console.log(`User ${socket.id} joined the draft: ${localDraftCode}`);
     } else {
       console.log("Invalid draft code");
     }
@@ -38,39 +38,41 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
       console.log(`User ${socket.id} disconnected`);
     });
+    
+    
     socket.on("updatePlayers", () => {
-      socket.to(draftCode).emit("recUpdatedPlayers");
+      socket.to(localDraftCode).emit("recUpdatedPlayers");
     });
 
-    socket.on("updateDraftOrder", (updatedTeams) => {
-      socket.to(draftCode).emit("recUpdatedDraftOrder", updatedTeams);
+    socket.on("updateDraftOrder", (emittedTeams) => {
+      socket.to(localDraftCode).emit("recUpdatedDraftOrder", emittedTeams);
     });
 
-    socket.on("updateIndex", (updatedIndex) => {
-      socket.to(draftCode).emit("recUpdateIndex", updatedIndex);
+    socket.on("updateIndex", (emittedIndex) => {
+      socket.to(localDraftCode).emit("recUpdateIndex", emittedIndex);
     });
 
     socket.on("updateDraftStatus", (updatedDraftStatus) => {
-      socket.to(draftCode).emit("recUpdateDraftStatus", updatedDraftStatus);
+      socket.to(localDraftCode).emit("recUpdateDraftStatus", updatedDraftStatus);
     });
 
     socket.on("updateDraftCom", (updatedStartButton) => {
-      socket.to(draftCode).emit("recUpdateDraftCom", updatedStartButton);
+      socket.to(localDraftCode).emit("recUpdateDraftCom", updatedStartButton);
     });
 
     socket.on("autoUpPlayer", () => {
-      socket.to(draftCode).emit("recAutoUpPlayer");
+      socket.to(localDraftCode).emit("recAutoUpPlayer");
     });
 
     socket.on("autoTimer", (emittedTimeLeft) => {
-      socket.to(draftCode).emit("recAutoTimer", emittedTimeLeft);
+      socket.to(localDraftCode).emit("recAutoTimer", emittedTimeLeft);
     });
   });
 
   // Listen for events from the PlayersComponent
 });
 
-const isValidDraftCode = (draftCode) => {
+const isValidDraftCode = (localDraftCode) => {
   return true;
 };
 
@@ -431,6 +433,7 @@ app.get("/teams/indraft/:draftcode", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 app.get("/teams/draftorder/:draftcode", async (req, res) => {
   const { draftcode } = req.params;
