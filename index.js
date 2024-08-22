@@ -82,7 +82,6 @@ const isValidDraftCode = (localDraftCode) => {
   return true;
 };
 
-
 app.use(cors());
 
 server.listen(process.env.PORT || 8080, () => {
