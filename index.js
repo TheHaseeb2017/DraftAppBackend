@@ -1,5 +1,5 @@
 const bodyParser = require("body-parser");
-const { Sequelize, DataTypes} = require("sequelize");
+const { Sequelize, DataTypes } = require("sequelize");
 const express = require("express");
 const app = express();
 const http = require("http");
@@ -38,10 +38,14 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
       console.log(`User ${socket.id} disconnected`);
     });
-    
-    
+
     socket.on("updatePlayers", () => {
       socket.to(localDraftCode).emit("recUpdatedPlayers");
+    });
+
+    socket.on("updateDraft", () => {
+      console.log('Update Draft Ran')
+      socket.to(localDraftCode).emit("recDraftUpdate");
     });
 
     socket.on("updateDraftOrder", (emittedTeams) => {
@@ -53,7 +57,9 @@ io.on("connection", (socket) => {
     });
 
     socket.on("updateDraftStatus", (updatedDraftStatus) => {
-      socket.to(localDraftCode).emit("recUpdateDraftStatus", updatedDraftStatus);
+      socket
+        .to(localDraftCode)
+        .emit("recUpdateDraftStatus", updatedDraftStatus);
     });
 
     socket.on("updateDraftCom", (updatedStartButton) => {
@@ -156,12 +162,12 @@ const Team = sequelize.define(
         key: "draftcode",
       },
     },
-    
+
     teamcode: {
       type: DataTypes.STRING(6),
       unique: true,
     },
-    
+
     candraft: {
       type: DataTypes.BOOLEAN,
       defaultValue: "true ",
@@ -267,29 +273,28 @@ DraftPick.belongsTo(Player, { foreignKey: "playerid" });
 
 Team.hasMany(Player, { constraints: false, foreignKey: "teamid" });
 
-const sgMail = require('@sendgrid/mail');
+const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-app.post('/send-draft-code', async (req, res) => {
+app.post("/send-draft-code", async (req, res) => {
   const { userEmail, draftCode } = req.body;
 
   const msg = {
     to: userEmail,
-    from: 'your-email@example.com',
-    subject: 'Your Draft Code',
+    from: "your-email@example.com",
+    subject: "Your Draft Code",
     text: `Thank you for creating a draft! Your draft code is: ${draftCode}`,
     html: `<p>Your draft code is: <strong>${draftCode}</strong></p>`,
   };
 
   try {
     await sgMail.send(msg);
-    res.status(200).send('Email sent successfully');
+    res.status(200).send("Email sent successfully");
   } catch (error) {
-    console.error('Error sending email:', error);
-    res.status(500).send('Failed to send email');
+    console.error("Error sending email:", error);
+    res.status(500).send("Failed to send email");
   }
 });
-
 
 app.post("/drafts", async (req, res) => {
   try {
@@ -388,6 +393,29 @@ app.put("/draftsetting/update/:draftcode", async (req, res) => {
     draft.draftdate = draftdate;
     draft.duration = duration;
     draft.isactive = isactive;
+
+    if (isactive === true) {
+      const team = await Team.findOne({
+        where: {
+          draftcode: draftcode,
+          draftorder: 1,
+        },
+      });
+
+      team.candraft = true;
+      await team.save();
+    } else {
+      const teams = await Team.findAll({
+        where: {
+          draftcode: draftcode,
+        },
+      });
+
+      for (let team of teams) {
+        team.candraft = false;
+        await team.save();
+      }
+    }
     await draft.save();
     res.json(draft);
   } catch (error) {
@@ -408,7 +436,10 @@ app.put("/candraft/update/:teamcode", async (req, res) => {
     }
 
     // Update all teams with the same draftcode, setting candraft to false
-    await Team.update({ candraft: false }, { where: { draftcode: team.draftcode } });
+    await Team.update(
+      { candraft: false },
+      { where: { draftcode: team.draftcode } }
+    );
 
     // Set candraft to true for the team with the matching teamcode
     team.candraft = true;
@@ -420,7 +451,6 @@ app.put("/candraft/update/:teamcode", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 app.get("/player/notdrafted/:draftcode", async (req, res) => {
   const { draftcode } = req.params;
@@ -448,7 +478,7 @@ app.get("/teams/indraft/:draftcode", async (req, res) => {
       where: {
         draftcode: draftcode,
       },
-      order: [["draftorder", "ASC"]], 
+      order: [["draftorder", "ASC"]],
     });
 
     res.json(team);
@@ -457,7 +487,6 @@ app.get("/teams/indraft/:draftcode", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 app.get("/teams/draftorder/:draftcode", async (req, res) => {
   const { draftcode } = req.params;
