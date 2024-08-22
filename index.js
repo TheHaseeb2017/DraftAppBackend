@@ -19,7 +19,7 @@ const io = new Server(server, {
   cors: {
     origin:
       "http://localhost:3000" ||
-      "http://draftapp-ui-env.eba-xkf2drch.us-east-1.elasticbeanstalk.com/",
+      "http://draftappfrontend.eba-pzytpusd.us-east-1.elasticbeanstalk.com/",
     methods: ["GET", "POST", "PUT"],
   },
 });
@@ -44,7 +44,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("updateDraft", () => {
-      console.log('Update Draft Ran')
+      console.log("Update Draft Ran");
       socket.to(localDraftCode).emit("recDraftUpdate");
     });
 
@@ -90,10 +90,10 @@ server.listen(process.env.PORT || 8080, () => {
 
 app.use(bodyParser.json());
 
-const password = process.env.DB_PASSWORD || "postgres"; // Use the environment variable if set, fallback to a default value
+const password = process.env.DB_PASSWORD || "Eagles17"; // Use the environment variable if set, fallback to a default value
 
 const sequelize = new Sequelize("draft_app_db", "postgres", password, {
-  host: "localhost",
+  host: "database-2.checiya88wtd.us-east-1.rds.amazonaws.com",
   dialect: "postgres",
 });
 
