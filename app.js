@@ -19,7 +19,7 @@ const io = new Server(server, {
   cors: {
     origin:
       "http://localhost:3000" ||
-      "http://draftappfrontend.eba-pzytpusd.us-east-1.elasticbeanstalk.com/",
+      "http://frontend.eba-pzytpusd.us-east-1.elasticbeanstalk.com/",
     methods: ["GET", "POST", "PUT"],
   },
 });

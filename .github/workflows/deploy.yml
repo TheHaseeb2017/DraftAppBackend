@@ -1,35 +1,57 @@
-name: Deploy Draft App to AWS EBS
+name: Deploy to AWS Elastic Beanstalk
+
 on:
-  # activates the workflow when there is a push on the main branch
   push:
     branches:
-      - main
+      - main  # Trigger deployment when pushing to the main branch
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest # the OS your job should run on
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Latest Repo
-        # checks out your repository under the GitHub workspace so that your workflow can access it
-        uses: actions/checkout@v2
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Generate Deployment Package 
-        # zip all files except .git
-        run: zip -r DRAFTAPPBACKEND.zip * -x "**.git**"
-        
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'  # Specify the Node.js version you are using
 
+    - name: Install Dependencies
+      run: npm install
 
-      - name: Deploy to EB
-        uses: einaregilsson/beanstalk-deploy@v21
-        with:
-         #  input the credentials you used to setup AWS CLI and credentials for the application environment
-          aws_access_key: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          aws_secret_key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-          application_name: "${{ secrets.EB_APPLICATION_NAME }}"
-          environment_name: "${{ secrets.EB_ENVIRONMENT_NAME }}"
-          version_label: ${{ github.sha }}
-          region: us-east-1
-          deployment_package: DRAFTAPPBACKEND.zip
+    - name: Zip Application
+      run: zip -r app.zip . -x '*.git*'  # Create a ZIP of your app excluding .git files
 
-      - name: Deployed!
-        run: echo App deployed to EL
+    - name: Install AWS CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3 python3-pip
+        pip3 install awscli --upgrade --user
+
+    - name: Deploy to Elastic Beanstalk
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: us-east-1
+        APPLICATION_NAME: ${{ secrets.EB_APPLICATION_NAME }}
+        ENVIRONMENT_NAME: ${{ secrets.EB_ENVIRONMENT_NAME }}
+
+      run: |
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        aws configure set region $AWS_REGION
+
+        # Deploy to Elastic Beanstalk
+        aws elasticbeanstalk create-application-version \
+          --application-name $APPLICATION_NAME \
+          --version-label $GITHUB_SHA \
+          --source-bundle S3Bucket="elasticbeanstalk-$AWS_REGION-$AWS_ACCOUNT_ID",S3Key="app.zip"
+
+        aws elasticbeanstalk update-environment \
+          --environment-name $ENVIRONMENT_NAME \
+          --version-label $GITHUB_SHA
+
+    - name: Cleanup
+      run: rm app.zip
